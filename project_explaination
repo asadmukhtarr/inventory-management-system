@@ -1,0 +1,38 @@
+Dashboard
+
+Authentication
+ ├── Login
+ ├── Register
+ └── Profile
+
+Categories
+ ├── All Categories
+ └── Add Category
+
+Products
+ ├── All Products
+ ├── Add Product
+ └── Product Search
+
+Suppliers
+ ├── All Suppliers
+ └── Add Supplier
+
+Stock Management
+ ├── Stock In
+ ├── Stock Out
+ └── Stock History
+
+Sales
+ ├── All Sales
+ ├── Add Sale
+ ├── Invoices
+ └── Sales History
+
+Reports
+ ├── Sales Reports
+ ├── Stock Reports
+ ├── Product Reports
+ └── Supplier Reports
+
+ logout

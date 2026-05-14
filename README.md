@@ -11,3 +11,6 @@
         - Routes : Web Application Path ..
 # Interview Questions
     - What is view and what is the extension of view .. : view is use for frontend and extension of view in laravel is .blade.php
+
+# Command For Make Controller
+    - Php artisan make:controller nameController 

@@ -1,10 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\adminController;
 
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('/asad',function(){
-    return "Asad";
-});
+// direct route ...
+// Route::get('/dashboard',function(){
+//     return view('dashboard');
+// });
+// Indirect Route ..
+Route::get('/dashboard',[adminController::class,'dashboard'])->name('dashboard');
+Route::get('/test',[adminController::class,'test'])->name('test');

@@ -13,3 +13,6 @@ Route::get('/', function () {
 // Indirect Route ..
 Route::get('/dashboard',[adminController::class,'dashboard'])->name('dashboard');
 Route::get('/test',[adminController::class,'test'])->name('test');
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

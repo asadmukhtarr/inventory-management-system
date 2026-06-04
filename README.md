@@ -19,3 +19,20 @@
 
 # Command For Make Controller
     - Php artisan make:controller nameController 
+#refernce Links
+    - https://livewire.laravel.com/docs/4.x/quickstart
+# Product Development Proccess ..
+    - # 1: Laravel Installation
+    - # 2: Project Plan 
+    - # 3: Authentication System
+    - # 4: Installation of Livewire
+    - # 5: Required Components Create
+    - # 6: Routes For All Components
+# Database Required Tables + Models ... ( Jitny tables hun gay utni hi migrations hun gi)
+    - Categories ( id  , title )
+    - Users
+    - Products (id, name , descrption , quantity , image , purchase price , sale price , status ,  )
+    - Supplier 
+    - Sales
+# Guidelines :
+    - Migrations always plural of model ..

@@ -6,13 +6,12 @@ Authentication
  └── Profile
 
 Categories
- ├── All Categories
- └── Add Category
+ ├── All Categories With Create Category
 
 Products
  ├── All Products
  ├── Add Product
- └── Product Search
+ └── Edit Product
 
 Suppliers
  ├── All Suppliers
@@ -20,19 +19,17 @@ Suppliers
 
 Stock Management
  ├── Stock In
- ├── Stock Out
  └── Stock History
 
 Sales
  ├── All Sales
- ├── Add Sale
+ ├── Create Sale
  ├── Invoices
  └── Sales History
 
 Reports
  ├── Sales Reports
  ├── Stock Reports
- ├── Product Reports
  └── Supplier Reports
 
  logout

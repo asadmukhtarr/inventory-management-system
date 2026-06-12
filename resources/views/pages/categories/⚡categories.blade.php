@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Component;
+use App\Models\Category;
 
 new class extends Component
 {
@@ -8,51 +9,58 @@ new class extends Component
     public $title = '';
     public $editId = null;
     public $editTitle = '';
+    public $editStatus = '';
     public $showModal = false;
     public $showEditModal = false;
+    public $search = '';
     
     public function mount()
     {
-        // Static categories data
-        $this->categories = [
-            ['id' => 1, 'title' => 'Electronics', 'created_at' => '2024-01-10', 'product_count' => 45],
-            ['id' => 2, 'title' => 'Clothing', 'created_at' => '2024-01-12', 'product_count' => 78],
-            ['id' => 3, 'title' => 'Books', 'created_at' => '2024-01-15', 'product_count' => 112],
-            ['id' => 4, 'title' => 'Home & Garden', 'created_at' => '2024-01-18', 'product_count' => 34],
-            ['id' => 5, 'title' => 'Sports', 'created_at' => '2024-01-20', 'product_count' => 56],
-            ['id' => 6, 'title' => 'Toys', 'created_at' => '2024-01-22', 'product_count' => 89],
-            ['id' => 7, 'title' => 'Automotive', 'created_at' => '2024-01-25', 'product_count' => 23],
-            ['id' => 8, 'title' => 'Health & Beauty', 'created_at' => '2024-01-28', 'product_count' => 67],
-        ];
+        $this->loadCategories();
+    }
+    
+    public function loadCategories()
+    {
+        $query = Category::query();
+        
+        if (!empty($this->search)) {
+            $query->where('title', 'like', '%' . $this->search . '%');
+        }
+        
+        $this->categories = $query->orderBy('created_at', 'desc')->get()->toArray();
+    }
+    
+    public function updatedSearch()
+    {
+        $this->loadCategories();
     }
     
     public function createCategory()
     {
         $this->validate([
-            'title' => 'required|min:2|max:50'
+            'title' => 'required|min:2|max:50|unique:categories,title'
         ]);
         
-        $newId = count($this->categories) + 1;
-        
-        $this->categories[] = [
-            'id' => $newId,
+        Category::create([
             'title' => $this->title,
-            'created_at' => date('Y-m-d'),
-            'product_count' => 0
-        ];
+            'status' => 'active'
+        ]);
         
         $this->title = '';
         $this->showModal = false;
+        $this->loadCategories();
         
         session()->flash('message', 'Category created successfully!');
+        session()->flash('message_type', 'success');
     }
     
     public function editCategory($id)
     {
-        $category = collect($this->categories)->firstWhere('id', $id);
+        $category = Category::find($id);
         if ($category) {
             $this->editId = $id;
-            $this->editTitle = $category['title'];
+            $this->editTitle = $category->title;
+            $this->editStatus = $category->status;
             $this->showEditModal = true;
         }
     }
@@ -60,32 +68,38 @@ new class extends Component
     public function updateCategory()
     {
         $this->validate([
-            'editTitle' => 'required|min:2|max:50'
+            'editTitle' => 'required|min:2|max:50|unique:categories,title,' . $this->editId,
+            'editStatus' => 'required|in:active,inactive'
         ]);
         
-        foreach ($this->categories as $key => $category) {
-            if ($category['id'] == $this->editId) {
-                $this->categories[$key]['title'] = $this->editTitle;
-                break;
-            }
+        $category = Category::find($this->editId);
+        if ($category) {
+            $category->update([
+                'title' => $this->editTitle,
+                'status' => $this->editStatus
+            ]);
         }
         
         $this->editId = null;
         $this->editTitle = '';
+        $this->editStatus = '';
         $this->showEditModal = false;
+        $this->loadCategories();
         
         session()->flash('message', 'Category updated successfully!');
+        session()->flash('message_type', 'success');
     }
     
     public function deleteCategory($id)
     {
-        $this->categories = array_filter($this->categories, function($category) use ($id) {
-            return $category['id'] != $id;
-        });
-        
-        $this->categories = array_values($this->categories);
-        
-        session()->flash('message', 'Category deleted successfully!');
+        $category = Category::find($id);
+        if ($category) {
+            $category->delete();
+            $this->loadCategories();
+            
+            session()->flash('message', 'Category deleted successfully!');
+            session()->flash('message_type', 'success');
+        }
     }
     
     public function openModal()
@@ -97,6 +111,7 @@ new class extends Component
     {
         $this->showModal = false;
         $this->title = '';
+        $this->resetErrorBag();
     }
     
     public function closeEditModal()
@@ -104,6 +119,8 @@ new class extends Component
         $this->showEditModal = false;
         $this->editId = null;
         $this->editTitle = '';
+        $this->editStatus = '';
+        $this->resetErrorBag();
     }
 };
 
@@ -111,13 +128,83 @@ new class extends Component
 
 <div>
     <style>
-        .category-card {
+        .form-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .table-card {
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border: none;
+        }
+        
+        .table-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px 15px 0 0;
+            padding: 1rem 1.5rem;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-btns .btn {
+            margin: 0 3px;
             transition: all 0.3s ease;
         }
-        .category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        
+        .action-btns .btn:hover {
+            transform: scale(1.05);
         }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+            border-radius: 25px;
+            border: 1px solid #e0e0e0;
+            background: white;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 12px;
+            color: #999;
+        }
+        
+        .stats-row {
+            margin-bottom: 20px;
+        }
+        
+        .stat-badge {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
         .modal-backdrop-fixed {
             position: fixed;
             top: 0;
@@ -127,6 +214,7 @@ new class extends Component
             background: rgba(0,0,0,0.5);
             z-index: 1040;
         }
+        
         .modal-fixed {
             position: fixed;
             top: 50%;
@@ -136,126 +224,190 @@ new class extends Component
             max-width: 500px;
             width: 90%;
         }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-custom {
+            animation: slideIn 0.3s ease;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+            min-width: 300px;
+        }
+        
+        .form-control:focus, .btn:focus {
+            box-shadow: none;
+        }
     </style>
-
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold mb-1">
-                <i class="bi bi-tags me-2"></i>Categories
-            </h3>
-            <p class="text-muted mb-0">Manage your product categories</p>
-        </div>
-        <button class="btn btn-primary" onclick="Livewire.dispatch('openModal')">
-            <i class="bi bi-plus-circle me-2"></i>Add Category
-        </button>
-    </div>
 
     <!-- Alert Message -->
     @if(session()->has('message'))
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-check-circle me-2"></i>{{ session('message') }}
+        <div class="alert alert-{{ session('message_type', 'success') }} alert-custom alert-dismissible fade show" role="alert">
+            <i class="bi bi-{{ session('message_type', 'success') == 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill' }} me-2"></i>
+            {{ session('message') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <!-- Stats Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card stat-card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1 opacity-75">Total Categories</h6>
-                            <h2 class="mb-0 fw-bold">{{ count($categories) }}</h2>
+    <div class="container-fluid px-4 py-4">
+        <div class="row g-4">
+            <!-- Left Column - Form -->
+            <div class="col-lg-4">
+                <div class="form-card p-4 text-white">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-tags fs-1"></i>
+                        <h3 class="mt-2 mb-0">Category Manager</h3>
+                        <p class="opacity-75 small">Add new categories to your collection</p>
+                    </div>
+                    
+                    <div class="stats-row">
+                        <div class="stat-badge text-dark">
+                            <div class="text-center">
+                                <small class="text-muted">Total Categories</small>
+                                <h4 class="mb-0 fw-bold">{{ count($categories) }}</h4>
+                            </div>
                         </div>
-                        <i class="bi bi-tags stat-icon"></i>
+                    </div>
+                    
+                    <form wire:submit.prevent="createCategory">
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold">
+                                <i class="bi bi-pencil-square me-2"></i>Category Name
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg @error('title') is-invalid @enderror" 
+                                   wire:model="title"
+                                   placeholder="Enter category name..."
+                                   style="border-radius: 10px;">
+                            @error('title')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <button type="submit" class="btn btn-light w-100 fw-bold py-2" style="border-radius: 10px;">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Create New Category
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4 pt-3 border-top border-white border-opacity-25">
+                        <div class="text-center small opacity-75">
+                            <i class="bi bi-info-circle"></i> Fill in the form above to add new categories
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card stat-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1 opacity-75">Total Products</h6>
-                            <h2 class="mb-0 fw-bold">{{ collect($categories)->sum('product_count') }}</h2>
+            
+            <!-- Right Column - Table -->
+            <div class="col-lg-8">
+                <div class="card table-card">
+                    <div class="card-header text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-table me-2"></i>
+                                <strong>Categories List</strong>
+                            </div>
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       wire:model.live.debounce.300ms="search"
+                                       placeholder="Search categories..."
+                                       style="width: 250px;">
+                            </div>
                         </div>
-                        <i class="bi bi-box-seam stat-icon"></i>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card stat-card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1 opacity-75">Recent Added</h6>
-                            <h2 class="mb-0 fw-bold">{{ count(array_slice($categories, -3)) }}</h2>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="35%">Category Name</th>
+                                        <th width="20%">Created Date</th>
+                                        <th width="15%">Status</th>
+                                        <th width="25%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($categories as $index => $category)
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-folder-fill text-primary me-2"></i>
+                                            <strong>{{ $category['title'] }}</strong>
+                                        </td>
+                                        <td>
+                                            <small>
+                                            <i class="bi bi-calendar3 text-muted me-1"></i>
+                                            {{ \Carbon\Carbon::parse($category['created_at'])->diffforhumans(); }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-{{ $category['status'] }}">
+                                                <i class="bi bi-{{ $category['status'] == 'active' ? 'check-circle' : 'x-circle' }} me-1"></i>
+                                            </span>
+                                        </td>
+                                        <td class="action-btns">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    wire:click="editCategory({{ $category['id'] }})"
+                                                    title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    wire:click="deleteCategory({{ $category['id'] }})"
+                                                    wire:confirm="Are you sure you want to delete '{{ $category['title'] }}' category?"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5">
+                                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                                            <p class="text-muted mt-2 mb-0">No categories found</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                        <i class="bi bi-clock-history stat-icon"></i>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Categories Grid -->
-    <div class="row g-4">
-        @foreach($categories as $category)
-        <div class="col-md-6 col-lg-4 col-xl-3">
-            <div class="card category-card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
-                            <i class="bi bi-folder fs-4 text-primary"></i>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-link text-dark p-0" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots-vertical fs-5"></i>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Showing {{ count($categories) }} {{ Str::plural('category', count($categories)) }}
+                            </small>
+                            <button class="btn btn-sm btn-primary" wire:click="openModal">
+                                <i class="bi bi-plus-lg"></i> Quick Add
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="#" onclick="Livewire.dispatch('editCategory', [{{ $category['id'] }}])">
-                                        <i class="bi bi-pencil me-2"></i>Edit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="#" onclick="if(confirm('Are you sure you want to delete this category?')) Livewire.dispatch('deleteCategory', [{{ $category['id'] }}])">
-                                        <i class="bi bi-trash me-2"></i>Delete
-                                    </a>
-                                </li>
-                            </ul>
                         </div>
-                    </div>
-                    <h5 class="fw-bold mb-2">{{ $category['title'] }}</h5>
-                    <p class="text-muted small mb-2">
-                        <i class="bi bi-calendar3 me-1"></i> Created: {{ \Carbon\Carbon::parse($category['created_at'])->format('M d, Y') }}
-                    </p>
-                    <div class="mt-3">
-                        <span class="badge bg-light text-dark">
-                            <i class="bi bi-box"></i> {{ $category['product_count'] }} Products
-                        </span>
                     </div>
                 </div>
             </div>
         </div>
-        @endforeach
     </div>
 
     <!-- Create Category Modal -->
     @if($showModal)
-    <div class="modal-backdrop-fixed" onclick="Livewire.dispatch('closeModal')"></div>
+    <div class="modal-backdrop-fixed" wire:click="closeModal"></div>
     <div class="modal-fixed">
-        <div class="card border-0 shadow-lg">
-            <div class="card-header bg-white border-0 pt-4">
+        <div class="card border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="card-header bg-white border-0 pt-4" style="border-radius: 15px 15px 0 0;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">
-                        <i class="bi bi-plus-circle me-2"></i>Add New Category
+                        <i class="bi bi-plus-circle text-primary me-2"></i>Add New Category
                     </h5>
-                    <button type="button" class="btn-close" onclick="Livewire.dispatch('closeModal')"></button>
+                    <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
             </div>
             <div class="card-body">
@@ -265,16 +417,17 @@ new class extends Component
                         <input type="text" 
                                class="form-control form-control-lg @error('title') is-invalid @enderror" 
                                wire:model="title"
-                               placeholder="Enter category name">
+                               placeholder="Enter category name"
+                               style="border-radius: 10px;">
                         @error('title')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
+                        <button type="submit" class="btn btn-primary flex-grow-1 py-2" style="border-radius: 10px;">
                             <i class="bi bi-check-circle me-2"></i>Create Category
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="Livewire.dispatch('closeModal')">
+                        <button type="button" class="btn btn-secondary px-4" wire:click="closeModal" style="border-radius: 10px;">
                             Cancel
                         </button>
                     </div>
@@ -286,15 +439,15 @@ new class extends Component
 
     <!-- Edit Category Modal -->
     @if($showEditModal)
-    <div class="modal-backdrop-fixed" onclick="Livewire.dispatch('closeEditModal')"></div>
+    <div class="modal-backdrop-fixed" wire:click="closeEditModal"></div>
     <div class="modal-fixed">
-        <div class="card border-0 shadow-lg">
-            <div class="card-header bg-white border-0 pt-4">
+        <div class="card border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="card-header bg-white border-0 pt-4" style="border-radius: 15px 15px 0 0;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold mb-0">
-                        <i class="bi bi-pencil-square me-2"></i>Edit Category
+                        <i class="bi bi-pencil-square text-warning me-2"></i>Edit Category
                     </h5>
-                    <button type="button" class="btn-close" onclick="Livewire.dispatch('closeEditModal')"></button>
+                    <button type="button" class="btn-close" wire:click="closeEditModal"></button>
                 </div>
             </div>
             <div class="card-body">
@@ -304,16 +457,31 @@ new class extends Component
                         <input type="text" 
                                class="form-control form-control-lg @error('editTitle') is-invalid @enderror" 
                                wire:model="editTitle"
-                               placeholder="Enter category name">
+                               placeholder="Enter category name"
+                               style="border-radius: 10px;">
                         @error('editTitle')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Status</label>
+                        <select class="form-select form-select-lg @error('editStatus') is-invalid @enderror" 
+                                wire:model="editStatus"
+                                style="border-radius: 10px;">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        @error('editStatus')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
+                        <button type="submit" class="btn btn-primary flex-grow-1 py-2" style="border-radius: 10px;">
                             <i class="bi bi-save me-2"></i>Update Category
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="Livewire.dispatch('closeEditModal')">
+                        <button type="button" class="btn btn-secondary px-4" wire:click="closeEditModal" style="border-radius: 10px;">
                             Cancel
                         </button>
                     </div>

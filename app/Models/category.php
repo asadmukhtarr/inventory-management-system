@@ -14,4 +14,7 @@ class Category extends Model
     protected $attributes = [
         'status' => 'active'
     ];
+    public function product(){
+        return $this->hasMany(product::class);
+    }
 }

@@ -408,11 +408,6 @@
                                 <i class="bi bi-plus-circle"></i> Create Product
                             </a>
                         </li>
-                        <li>
-                            <a href="{{ route('products.edit', ['id' => 1]) }}" class="dropdown-item-custom" onclick="closeSidebar()">
-                                <i class="bi bi-pencil-square"></i> Edit Product
-                            </a>
-                        </li>
                     </ul>
                 </div>
                 

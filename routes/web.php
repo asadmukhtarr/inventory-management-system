@@ -22,6 +22,7 @@ Route::livewire('/brands','pages::brand.create')->name('brand');
 Route::prefix('products')->name('products.')->group(function(){
     Route::livewire('/create','pages::products.create')->name('create');
     Route::livewire('/','pages::products.all')->name('all');
+    Route::livewire('/show/{id}','pages::products.show')->name('show');
     Route::livewire('/product/{id}','pages::products.edit')->name('edit');
 });
 // reports ..

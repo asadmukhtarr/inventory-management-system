@@ -27,4 +27,7 @@ class Supplier extends Model
     protected $casts = [
         'balance' => 'decimal:2'
     ];
+    public function product(){
+        return $this->hasMany(product::class);
+    }
 }

@@ -37,5 +37,13 @@ class Product extends Model
         }
         return null;
     }
-    
+    public function category(){
+        return $this->belongsTo(category::class);
+    }
+    public function brand(){
+        return $this->belongsTo(brand::class);
+    }
+      public function supplier(){
+        return $this->belongsTo(supplier::class);
+    }
 }

@@ -18,6 +18,8 @@ Route::livewire('/dashboard','pages::dashboard')->name('dashboard');
 Route::livewire('/categories','pages::categories.categories')->name('categories');
 // brands ..
 Route::livewire('/brands','pages::brand.create')->name('brand');
+// customers ..
+Route::livewire('/customers','pages::customers.create')->name('customers');
 // products ..
 Route::prefix('products')->name('products.')->group(function(){
     Route::livewire('/create','pages::products.create')->name('create');

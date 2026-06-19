@@ -380,15 +380,6 @@
                     <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
                 
-                <!-- Categories -->
-                <a href="{{ route('categories') }}" class="sidebar-link {{ request()->routeIs('categories') ? 'active' : '' }}" onclick="closeSidebar()">
-                    <i class="bi bi-tags"></i> Categories
-                </a>
-                  <!-- brand -->
-                <a href="{{ route('brand') }}" class="sidebar-link {{ request()->routeIs('brand') ? 'active' : '' }}" onclick="closeSidebar()">
-                    <i class="bi bi-list"></i> Brand
-                </a>
-                
                 <!-- Products Dropdown -->
                 <div class="dropdown-container">
                     <button class="sidebar-link dropdown-toggle-btn" onclick="toggleDropdown(this)" aria-expanded="false">
@@ -432,7 +423,18 @@
                         </li>
                     </ul>
                 </div>
-                
+                            
+                <!-- Categories -->
+                <a href="{{ route('categories') }}" class="sidebar-link {{ request()->routeIs('categories') ? 'active' : '' }}" onclick="closeSidebar()">
+                    <i class="bi bi-tags"></i> Categories
+                </a>
+                  <!-- brand -->
+                <a href="{{ route('brand') }}" class="sidebar-link {{ request()->routeIs('brand') ? 'active' : '' }}" onclick="closeSidebar()">
+                    <i class="bi bi-list"></i> Brand
+                </a>
+                  <a href="{{ route('customers') }}" class="sidebar-link {{ request()->routeIs('brand') ? 'active' : '' }}" onclick="closeSidebar()">
+                    <i class="bi bi-people-fill"></i> Customers
+                </a>
                 <!-- Stock Management Dropdown -->
                 <div class="dropdown-container">
                     <button class="sidebar-link dropdown-toggle-btn" onclick="toggleDropdown(this)" aria-expanded="false">

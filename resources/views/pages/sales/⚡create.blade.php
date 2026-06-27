@@ -23,7 +23,6 @@ new class extends Component
     
     // Sale items
     public $items = [];
-    
     // Models data for dropdowns
     public $customers = [];
     public $products = [];
@@ -31,6 +30,7 @@ new class extends Component
          $this->sale_date = date('Y-m-d');
          $this->products = product::all();
          $this->customers = customer::all();
+        $this->calculateTotals();
     }
     public function additem(){
         $this->items[] = [
@@ -40,17 +40,38 @@ new class extends Component
             'price' => 0,
             'total' => 0
         ];
+        $this->calculateTotals();
+    }
+    public function changetotal($index){
+        $this->items[$index]['total'] = $this->items[$index]['quantity'] * $this->items[$index]['price'];
+        $this->calculateTotals();
     }
     public function removeItem($index){
         // dd($index);
         unset($this->items[$index]);
         $this->items = array_values($this->items);
+        $this->calculateTotals();
     }
     public function updateItem($index){
         $product = product::find($this->items[$index]['product_id']);
         $this->items[$index]['sku'] = $product->sku;
         $this->items[$index]['price'] = $product->sale_price;
         $this->items[$index]['total'] = $this->items[$index]['quantity'] * $this->items[$index]['price']; 
+        $this->calculateTotals();
+    }
+    private function calculateTotals()
+    {
+        $this->subtotal = array_sum(array_column($this->items, 'total'));
+        $this->total = $this->subtotal - $this->discount + $this->tax;
+    }
+    public function dicount_calculation(){
+       // dd($this->discount);
+        $disconted_amount = ( $this->subtotal * $this->discount ) / 100;
+        $this->total = $this->subtotal - $disconted_amount;
+    }
+    public function tax_calculation(){
+        $tax_amount = ( $this->total * $this->tax ) / 100;
+        $this->total = $this->total + $tax_amount;
     }
 }
 ?>
@@ -145,7 +166,8 @@ new class extends Component
                                             <td>
                                                 <input type="number" 
                                                        class="form-control" 
-                                                       wire:model="items.{{ $index }}.quantity" 
+                                                       wire:model="items.{{ $index }}.quantity"
+                                                       wire:keyup="changetotal({{ $index }})" 
                                                        min="1">
                                             </td>
                                             <td>
@@ -202,6 +224,7 @@ new class extends Component
                                                     <input type="number" step="0.01" 
                                                            class="form-control form-control-sm d-inline-block" 
                                                            style="width: 120px; text-align: right;"
+                                                           wire:keyup="dicount_calculation"
                                                            wire:model="discount" 
                                                            min="0">
                                                 </div>
@@ -212,6 +235,7 @@ new class extends Component
                                                     <input type="number" step="0.01" 
                                                            class="form-control form-control-sm d-inline-block" 
                                                            style="width: 120px; text-align: right;"
+                                                           wire:keyup="tax_calculation"
                                                            wire:model="tax" 
                                                            min="0">
                                                 </div>

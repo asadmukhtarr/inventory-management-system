@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\sale_item as SaleItem;
 
 class Sale extends Model
 {

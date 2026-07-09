@@ -412,11 +412,6 @@
                     </button>
                     <ul class="dropdown-menu-inner" id="suppliersMenu">
                         <li>
-                            <a href="{{ route('supplier.all') }}" class="dropdown-item-custom" onclick="closeSidebar()">
-                                <i class="bi bi-people"></i> All Suppliers
-                            </a>
-                        </li>
-                        <li>
                             <a href="{{ route('supplier.create') }}" class="dropdown-item-custom" onclick="closeSidebar()">
                                 <i class="bi bi-person-plus"></i> Add Supplier
                             </a>

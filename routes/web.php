@@ -36,9 +36,11 @@ Route::prefix('reports')->name('reports.')->group(function(){
 // sales ..
 Route::prefix('sales')->name('sales.')->group(function(){
     Route::livewire('/create','pages::sales.create')->name('create');
+    Route::livewire('/edit/{id}','pages::sales.edit')->name('edit');
     Route::livewire('/history','pages::sales.history')->name('history');
     Route::livewire('/invoice','pages::sales.invoices')->name('invoice');
     Route::livewire('/sales','pages::sales.sales')->name('sales');
+    Route::livewire('/show/{id}','pages::sales.show')->name('show');
 });
 // Stock ..
 Route::prefix('stock')->name('stock.')->group(function(){

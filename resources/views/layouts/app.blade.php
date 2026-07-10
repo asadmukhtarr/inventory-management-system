@@ -512,7 +512,7 @@
                 </div>
                 
                 <!-- Logout -->
-                <a href="#" class="sidebar-link" onclick="closeSidebar()">
+                <a href="{{ route('logout') }}" class="sidebar-link">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
             </div>

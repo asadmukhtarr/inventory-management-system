@@ -77,12 +77,6 @@ Designed using modern Laravel architecture, real-time Livewire components, respo
 
 ---
 
-## Invoice
-
-![Invoice](screenshots/invoice.png)
-
----
-
 ## Reports
 
 ![Reports](screenshots/reports.png)
@@ -380,7 +374,7 @@ settings
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/inventory-management-system.git
+git clone https://github.com/asadmukhtarr/inventory-management-system.git
 ```
 
 Move into project

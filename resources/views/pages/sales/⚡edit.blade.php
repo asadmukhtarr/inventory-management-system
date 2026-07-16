@@ -209,7 +209,13 @@ new class extends Component
                 ]);
             }
         }
-
+         if($this->status == "completed"){
+            foreach ($this->items as $item) {
+                $product = Product::find($item['product_id']);
+                $product->quantity -= $item['quantity'];
+                $product->save();
+            }
+        }
         session()->flash('message', 'Sale updated successfully!');
         return redirect()->route('sales.show', $sale->id);
     }

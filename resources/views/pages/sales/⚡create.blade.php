@@ -87,15 +87,62 @@ new class extends Component
         $this->calculateTotals();
     }
     
-    public function updateItem($index){
-        $product = Product::find($this->items[$index]['product_id']);
-        if ($product) {
-            $this->items[$index]['sku'] = $product->sku;
-            $this->items[$index]['price'] = $product->sale_price;
-            $this->items[$index]['total'] = $this->items[$index]['quantity'] * $this->items[$index]['price']; 
-        }
-        $this->calculateTotals();
+    public function updateItem($index)
+{
+    // First, check if a product is selected
+    if (empty($this->items[$index]['product_id'])) {
+        return; // Do nothing if no product selected
     }
+    
+    $selectedProductId = $this->items[$index]['product_id'];
+    
+    // Check for duplicates in the items array (excluding the current index)
+    $duplicateIndex = $this->findDuplicateProduct($selectedProductId, $index);
+    
+    if ($duplicateIndex !== false) {
+        // Product already exists in another row
+        // Option 1: Show error message and reset the current selection
+        session()->flash('error', 'This product has already been added!');
+        
+        // Reset the current item's product selection
+        $this->items[$index]['product_id'] = '';
+        $this->items[$index]['sku'] = '';
+        $this->items[$index]['price'] = 0;
+        $this->items[$index]['total'] = 0;
+        
+        // Recalculate totals
+        $this->calculateTotals();
+        return;
+    }
+    
+    // No duplicate found, proceed with normal update
+    $product = Product::find($selectedProductId);
+    if ($product) {
+        $this->items[$index]['sku'] = $product->sku;
+        $this->items[$index]['price'] = $product->sale_price;
+        $this->items[$index]['total'] = $this->items[$index]['quantity'] * $this->items[$index]['price'];
+    }
+    $this->calculateTotals();
+}
+
+/**
+ * Find duplicate product in items array using array_search()
+ * 
+ * @param int $productId The product ID to search for
+ * @param int $currentIndex The index to exclude from search
+ * @return int|false The index of duplicate or false if not found
+ */
+private function findDuplicateProduct($productId, $currentIndex)
+{
+    // Extract all product IDs from the items array
+    $productIds = array_column($this->items, 'product_id');
+    
+    // Remove the current index from search
+    unset($productIds[$currentIndex]);
+    
+    // Search for the product ID in the remaining items
+    return array_search($productId, $productIds);
+}
     
     private function calculateTotals()
     {
@@ -151,7 +198,7 @@ new class extends Component
         $this->dicount_calculation();
         $this->tax_calculation();
         $this->paid_amount_calculation();
-
+        //dd($this->status);
         // Create the sale
         $sale = Sale::create([
             'invoice_no' => $this->invoice_no,
@@ -181,11 +228,15 @@ new class extends Component
                 'total' => $item['quantity'] * $item['price'],
             ]);
 
-            // Optional: Update product stock
-            // $product = Product::find($item['product_id']);
-            // $product->decrement('stock', $item['quantity']);
         }
-
+        // for  subtract quantity ..
+        if($this->status == "completed"){
+            foreach ($this->items as $item) {
+                $product = Product::find($item['product_id']);
+                $product->stock -= $item['quantity'];
+                $product->save();
+            }
+        }
         // Reset form or redirect
         session()->flash('message', 'Sale created successfully!');
         
@@ -281,12 +332,32 @@ new class extends Component
                                             <td>{{ $index + 1 }}</td>
                                             <td>
                                                 <select class="form-control @error('items.'.$index.'.product_id') is-invalid @enderror" 
-                                                        wire:model="items.{{ $index }}.product_id" wire:change="updateItem({{ $index }})">
-                                                    <option value="">Select Product</option>
-                                                    @foreach($products as $product)
-                                                        <option value="{{ $product->id }}">{{ $product->name }}</option>
-                                                    @endforeach
-                                                </select>
+        wire:model="items.{{ $index }}.product_id" 
+        wire:change="updateItem({{ $index }})">
+    <option value="">Select Product</option>
+    @foreach($products as $product)
+        @if($product->quantity > 0)
+            @php
+                // Check if this product is already added in other rows
+                $isAlreadyAdded = false;
+                foreach($items as $key => $item) {
+                    if($key != $index && isset($item['product_id']) && $item['product_id'] == $product->id) {
+                        $isAlreadyAdded = true;
+                        break;
+                    }
+                }
+            @endphp
+            <option value="{{ $product->id }}" 
+                    {{ $isAlreadyAdded ? 'disabled' : '' }}
+                    {{ isset($item['product_id']) && $item['product_id'] == $product->id ? 'selected' : '' }}>
+                {{ $product->name }}
+                @if($isAlreadyAdded)
+                    (Already Added)
+                @endif
+            </option>
+        @endif
+    @endforeach
+</select>
                                                 @error('items.'.$index.'.product_id')
                                                     <span class="text-danger small">{{ $message }}</span>
                                                 @enderror
